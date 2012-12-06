@@ -47,10 +47,8 @@ namespace StateSpaceSandbox
             CancellationTokenSource cts = new CancellationTokenSource();
             CancellationToken ct = cts.Token;
 
-            Semaphore calculationBasedOnXCanBegin = new Semaphore(0, 2);
-            Semaphore calculationBasedOnUCanBegin = new Semaphore(0, 2);
-            Semaphore xIsNotNeededAnymore = new Semaphore(0, 2);
-            Semaphore uIsNotNeededAnymore = new Semaphore(2, 2);
+            Semaphore startCalculation = new Semaphore(0, 2);
+            Semaphore calculationDone = new Semaphore(0, 2);
 
             IStateVector dx = new StateVector(x.Length);
             Task inputToState = new Task(() =>
@@ -58,19 +56,15 @@ namespace StateSpaceSandbox
                                                  IStateVector dxu = new StateVector(x.Length);
                                                  while (!ct.IsCancellationRequested)
                                                  {
+                                                     startCalculation.WaitOne();
                                                      Thread.MemoryBarrier();
 
-                                                     calculationBasedOnXCanBegin.WaitOne();
                                                      A.Transform(x, ref dx);
-
-                                                     calculationBasedOnUCanBegin.WaitOne();
                                                      B.Transform(u, ref dxu); // TODO: TransformAndAdd()      
-                                                     uIsNotNeededAnymore.Release();
-
                                                      dx.AddInPlace(dxu);
-                                                     xIsNotNeededAnymore.Release(1);
 
                                                      Thread.MemoryBarrier();
+                                                     calculationDone.Release();
                                                  }
                                              });
 
@@ -80,18 +74,15 @@ namespace StateSpaceSandbox
                                                   IOutputVector yu = new OutputVector(C.Rows);
                                                   while (!ct.IsCancellationRequested)
                                                   {
+                                                      startCalculation.WaitOne();
                                                       Thread.MemoryBarrier();
 
-                                                      calculationBasedOnXCanBegin.WaitOne();
                                                       C.Transform(x, ref y);
-                                                      xIsNotNeededAnymore.Release(1);
-
-                                                      calculationBasedOnUCanBegin.WaitOne();
                                                       D.Transform(u, ref yu); // TODO: TransformAndAdd()
                                                       y.AddInPlace(yu);
-                                                      uIsNotNeededAnymore.Release();
 
                                                       Thread.MemoryBarrier();
+                                                      calculationDone.Release();
                                                   }
                                               });
 
@@ -100,27 +91,21 @@ namespace StateSpaceSandbox
                                             Stopwatch watch = Stopwatch.StartNew();
                                             int steps = 0;
 
-                                            calculationBasedOnXCanBegin.Release(2);
                                             while (!ct.IsCancellationRequested)
                                             {                                              
                                                 // wait for a new u to be applied
-                                                uIsNotNeededAnymore.WaitOne();
-                                                uIsNotNeededAnymore.WaitOne();
                                                 // TODO: apply control vector
-                                                calculationBasedOnUCanBegin.Release(2);
+                                                startCalculation.Release(2);
+
+                                                // wait for y
+                                                calculationDone.WaitOne();
+                                                calculationDone.WaitOne();
+                                                Thread.MemoryBarrier();
 
                                                 // wait for state vector to be changeable
                                                 // TODO: perform real transformation
-                                                // dxCalculated.WaitOne();
-                                                Thread.MemoryBarrier();
-
-                                                xIsNotNeededAnymore.WaitOne();
-                                                xIsNotNeededAnymore.WaitOne();
                                                 x.AddInPlace(dx); // discrete integration, T=1
-
-                                                // wait for y
-                                                Thread.MemoryBarrier();
-
+                                                
                                                 // video killed the radio star
                                                 if (steps % 1000 == 0)
                                                 {
@@ -128,9 +113,6 @@ namespace StateSpaceSandbox
                                                     double thingy = steps/watch.Elapsed.TotalSeconds;
                                                     Trace.WriteLine("Position: " + localY[0] + ", Velocity: " + localY[1] + ", Acceleration: " + u[0] + ", throughput: " + thingy);
                                                 }
-
-                                                // as soon as Y is free
-                                                calculationBasedOnXCanBegin.Release(2);
 
                                                 // cancel out acceleration
                                                 if (steps++ == 10)
