@@ -20,12 +20,12 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// The method used to add two vectors
         /// </summary>
-        private readonly Action<double[], IVector, IVector> _additionExpression;
+        private static Action<double[], IVector, IVector> _additionExpression;
 
         /// <summary>
         /// The method used to add two vectors in-place
         /// </summary>
-        private readonly Action<double[], IVector> _additionInPlaceExpression;
+        private static Action<double[], IVector> _additionInPlaceExpression;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AbstractVector" /> class.
@@ -36,6 +36,7 @@ namespace StateSpaceSandbox.ModelImplementation
         {
             if (length <= 0) throw new ArgumentOutOfRangeException("length", "Vector length must be greater or equal to 1");
             _data = new double[length];
+
             _additionExpression = BuildAdditionExpression(length);
             _additionInPlaceExpression = BuildInPlaceAdditionExpression(length);
         }

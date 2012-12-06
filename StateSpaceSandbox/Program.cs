@@ -121,11 +121,11 @@ namespace StateSpaceSandbox
                                                 }
                                             }
                                         });
-
+            
             inputToState.Start();
             stateToOutput.Start();
             control.Start();
-
+            
             Console.ReadKey(true);
             cts.Cancel();
 
