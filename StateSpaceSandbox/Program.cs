@@ -47,11 +47,10 @@ namespace StateSpaceSandbox
             CancellationTokenSource cts = new CancellationTokenSource();
             CancellationToken ct = cts.Token;
 
-            AutoResetEvent xIsFree = new AutoResetEvent(false);
-            AutoResetEvent yIsFree = new AutoResetEvent(false);
-            ManualResetEvent xIsReady = new ManualResetEvent(false);
-            ManualResetEvent dxCalculated = new ManualResetEvent(false);
-            ManualResetEvent yCalculated = new ManualResetEvent(false);
+            Semaphore calculationBasedOnXCanBegin = new Semaphore(0, 2);
+            Semaphore calculationBasedOnUCanBegin = new Semaphore(0, 2);
+            Semaphore xIsNotNeededAnymore = new Semaphore(0, 2);
+            Semaphore uIsNotNeededAnymore = new Semaphore(2, 2);
 
             IStateVector dx = new StateVector(x.Length);
             Task inputToState = new Task(() =>
@@ -59,19 +58,19 @@ namespace StateSpaceSandbox
                                                  IStateVector dxu = new StateVector(x.Length);
                                                  while (!ct.IsCancellationRequested)
                                                  {
-                                                     // wait for x to be overwritable
-                                                     xIsFree.WaitOne();
-
-                                                     A.Transform(x, ref dx);
-                                                     // NOTE: x will not be marked as free here, because we have to transform it in a separate thread
-
-                                                     B.Transform(u, ref dxu); // TODO: TransformAndAdd()
-                                                     
-                                                     dx.AddInPlace(dxu);
-
-                                                     // mark dx as calculated
                                                      Thread.MemoryBarrier();
-                                                     dxCalculated.Set();
+
+                                                     calculationBasedOnXCanBegin.WaitOne();
+                                                     A.Transform(x, ref dx);
+
+                                                     calculationBasedOnUCanBegin.WaitOne();
+                                                     B.Transform(u, ref dxu); // TODO: TransformAndAdd()      
+                                                     uIsNotNeededAnymore.Release();
+
+                                                     dx.AddInPlace(dxu);
+                                                     xIsNotNeededAnymore.Release(1);
+
+                                                     Thread.MemoryBarrier();
                                                  }
                                              });
 
@@ -81,21 +80,19 @@ namespace StateSpaceSandbox
                                                   IOutputVector yu = new OutputVector(C.Rows);
                                                   while (!ct.IsCancellationRequested)
                                                   {
-                                                      // wait for x and y to be free
-                                                      xIsReady.WaitOne();
-                                                      yIsFree.WaitOne();
+                                                      Thread.MemoryBarrier();
+
+                                                      calculationBasedOnXCanBegin.WaitOne();
                                                       C.Transform(x, ref y);
+                                                      xIsNotNeededAnymore.Release(1);
 
-                                                      // mark x as not in use anymore
-                                                      xIsFree.Set();
-
+                                                      calculationBasedOnUCanBegin.WaitOne();
                                                       D.Transform(u, ref yu); // TODO: TransformAndAdd()
+                                                      uIsNotNeededAnymore.Release();
 
                                                       y.AddInPlace(yu);
 
-                                                      // mark y as calculated
                                                       Thread.MemoryBarrier();
-                                                      yCalculated.Set();
                                                   }
                                               });
 
@@ -104,31 +101,32 @@ namespace StateSpaceSandbox
                                             Stopwatch watch = Stopwatch.StartNew();
                                             int steps = 0;
 
-                                            xIsFree.Set();
-                                            yIsFree.Set();
+                                            calculationBasedOnXCanBegin.Release(2);
                                             while (!ct.IsCancellationRequested)
-                                            {
-                                                // wait for dx to be calculated
-                                                dxCalculated.WaitOne();
+                                            {                                              
+                                                // wait for a new u to be applied
+                                                uIsNotNeededAnymore.WaitOne();
+                                                uIsNotNeededAnymore.WaitOne();
+                                                // TODO: apply control vector
+                                                calculationBasedOnUCanBegin.Release(2);
 
+                                                // wait for state vector to be changeable
                                                 // TODO: perform real transformation
-                                                x.AddInPlace(dx); // discrete integration, T=1
-                                                
-                                                // mark x as not in use anymore
+                                                // dxCalculated.WaitOne();
                                                 Thread.MemoryBarrier();
-                                                xIsReady.Set();
 
-                                                // wait for y to calculate
-                                                yCalculated.WaitOne();
+                                                xIsNotNeededAnymore.WaitOne();
+                                                xIsNotNeededAnymore.WaitOne();
+                                                x.AddInPlace(dx); // discrete integration, T=1
+                                                calculationBasedOnXCanBegin.Release(2);
+
+                                                Thread.MemoryBarrier();
 
                                                 // video killed the radio star
                                                 if (steps % 1000 == 0)
                                                 {
                                                     Trace.WriteLine("Position: " + y[0] + ", Velocity: " + y[1] + ", Acceleration: " + u[0] + ", throughput: " + steps / watch.Elapsed.TotalSeconds);
                                                 }
-
-                                                // mark y as not in use anymore
-                                                yIsFree.Set();
 
                                                 // cancel out acceleration
                                                 if (steps++ == 10)
