@@ -115,8 +115,8 @@ namespace StateSpaceSandbox.ModelImplementation
                 {
                     var column = Expression.Constant(c, typeof(int));
 
-                    var accessLeft = Expression.ArrayAccess(leftArray, row, column);
-                    var accessRight = Expression.Property(rightArray, "Item", column);
+                    var accessLeft = Expression.ArrayAccess(leftArray, row, column); // TODO: Optimizations for matrices that are know to be fix - i.e. values given at construction time - hard code values and remove zero value multiplications
+                    var accessRight = Expression.Property(rightArray, "Item", column); // TODO: ^-- Optimize() call could re-compute expression tree with actual values
                     var multiplication = Expression.Multiply(accessLeft, accessRight);
                     if (runningSum == null)
                     {
