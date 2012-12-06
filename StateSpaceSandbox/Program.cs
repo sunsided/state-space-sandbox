@@ -88,9 +88,8 @@ namespace StateSpaceSandbox
 
                                                       calculationBasedOnUCanBegin.WaitOne();
                                                       D.Transform(u, ref yu); // TODO: TransformAndAdd()
-                                                      uIsNotNeededAnymore.Release();
-
                                                       y.AddInPlace(yu);
+                                                      uIsNotNeededAnymore.Release();
 
                                                       Thread.MemoryBarrier();
                                                   }
@@ -118,15 +117,20 @@ namespace StateSpaceSandbox
                                                 xIsNotNeededAnymore.WaitOne();
                                                 xIsNotNeededAnymore.WaitOne();
                                                 x.AddInPlace(dx); // discrete integration, T=1
-                                                calculationBasedOnXCanBegin.Release(2);
 
+                                                // wait for y
                                                 Thread.MemoryBarrier();
 
                                                 // video killed the radio star
                                                 if (steps % 1000 == 0)
                                                 {
-                                                    Trace.WriteLine("Position: " + y[0] + ", Velocity: " + y[1] + ", Acceleration: " + u[0] + ", throughput: " + steps / watch.Elapsed.TotalSeconds);
+                                                    var localY = y;
+                                                    double thingy = steps/watch.Elapsed.TotalSeconds;
+                                                    Trace.WriteLine("Position: " + localY[0] + ", Velocity: " + localY[1] + ", Acceleration: " + u[0] + ", throughput: " + thingy);
                                                 }
+
+                                                // as soon as Y is free
+                                                calculationBasedOnXCanBegin.Release(2);
 
                                                 // cancel out acceleration
                                                 if (steps++ == 10)
