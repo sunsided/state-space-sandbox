@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Linq.Expressions;
 using StateSpaceSandbox.Model;
 
@@ -15,17 +16,17 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// The data
         /// </summary>
-        private readonly double[] _data;
+        private readonly IValueProvider[] _data;
 
         /// <summary>
         /// The method used to add two vectors
         /// </summary>
-        private static Action<double[], IVector, IVector> _additionExpression;
+        private static Action<IValueProvider[], IVector, IVector> _additionExpression;
 
         /// <summary>
         /// The method used to add two vectors in-place
         /// </summary>
-        private static Action<double[], IVector> _additionInPlaceExpression;
+        private static Action<IValueProvider[], IVector> _additionInPlaceExpression;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AbstractVector" /> class.
@@ -35,7 +36,7 @@ namespace StateSpaceSandbox.ModelImplementation
         public AbstractVector(int length)
         {
             if (length <= 0) throw new ArgumentOutOfRangeException("length", "Vector length must be greater or equal to 1");
-            _data = new double[length];
+            _data = new IValueProvider[length];
 
             _additionExpression = BuildAdditionExpression(length);
             _additionInPlaceExpression = BuildInPlaceAdditionExpression(length);
@@ -86,7 +87,7 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <param name="index">The index.</param>
         /// <returns>System.Double.</returns>
         /// <exception cref="IndexOutOfRangeException">The specified index was smaller than zero or greater or equal to <see cref="Length"/></exception>
-        public double this[int index]
+        public IValueProvider this[int index]
         {
             [DebuggerStepThrough, Pure]
             get { return _data[index]; }
@@ -101,7 +102,7 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <typeparam name="TVector">The type of the T vector.</typeparam>
         /// <param name="length">The length.</param>
         /// <returns>The compiled addition lambda.</returns>
-        private static Action<double[], IVector, IVector> BuildAdditionExpression(int length)
+        private static Action<IValueProvider[], IVector, IVector> BuildAdditionExpression(int length)
         {
             var leftArray = Expression.Parameter(typeof (double[]), "left");
             var rightArray = Expression.Parameter(typeof (IVector), "right");
@@ -129,7 +130,7 @@ namespace StateSpaceSandbox.ModelImplementation
 
             // combine statements to expression block, then create and compile lambda
             var additionBlock = Expression.Block(expressions);
-            var lambda = Expression.Lambda<Action<double[], IVector, IVector>>(additionBlock, "addition", new[] {leftArray, rightArray, resultArray});
+            var lambda = Expression.Lambda<Action<IValueProvider[], IVector, IVector>>(additionBlock, "addition", new[] { leftArray, rightArray, resultArray });
             return lambda.Compile();
         }
 
@@ -139,7 +140,7 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <typeparam name="TVector">The type of the T vector.</typeparam>
         /// <param name="length">The length.</param>
         /// <returns>The compiled addition lambda.</returns>
-        private static Action<double[], IVector> BuildInPlaceAdditionExpression(int length)
+        private static Action<IValueProvider[], IVector> BuildInPlaceAdditionExpression(int length)
         {
             var leftArray = Expression.Parameter(typeof(double[]), "left");
             var rightArray = Expression.Parameter(typeof(IVector), "right");
@@ -161,7 +162,7 @@ namespace StateSpaceSandbox.ModelImplementation
 
             // combine statements to expression block, then create and compile lambda
             var additionBlock = Expression.Block(expressions);
-            var lambda = Expression.Lambda<Action<double[], IVector>>(additionBlock, "additionInPlace", new[] { leftArray, rightArray });
+            var lambda = Expression.Lambda<Action<IValueProvider[], IVector>>(additionBlock, "additionInPlace", new[] { leftArray, rightArray });
             return lambda.Compile();
         }
 
@@ -171,7 +172,7 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <returns>A <see cref="System.String" /> that represents this instance.</returns>
         public override string ToString()
         {
-            return String.Join("; ", _data);
+            return String.Join("; ", _data.Select(d => d.Value));
         }
     }
 }
