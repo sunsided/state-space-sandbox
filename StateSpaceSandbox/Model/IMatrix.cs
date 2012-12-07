@@ -21,6 +21,6 @@
         /// <param name="column">The column index.</param>
         /// <param name="row">The row index.</param>
         /// <returns>The value</returns>
-        double this[int column, int row] { get; set; }
+        IValueProvider this[int column, int row] { get; set; }
     }
 }

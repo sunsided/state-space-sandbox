@@ -15,6 +15,6 @@
         /// </summary>
         /// <param name="index">The index of the vector element</param>
         /// <returns>The value</returns>
-        double this[int index] { get; set; }
+        IValueProvider this[int index] { get; set; }
     }
 }

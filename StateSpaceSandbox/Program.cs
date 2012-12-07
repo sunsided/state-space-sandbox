@@ -13,6 +13,7 @@ namespace StateSpaceSandbox
     {
         public static void Main(string[] args)
         {
+            /*
             XorShift160 lol = new XorShift160();
             double runningSum = 0;
 
@@ -21,6 +22,7 @@ namespace StateSpaceSandbox
                 Console.WriteLine(lol.NextDouble());
             }
             return;
+            */
 
             IStateMatrix A = new StateMatrix(2, 2);
             A[0, 0] = 0;
