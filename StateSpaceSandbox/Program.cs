@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using StateSpaceSandbox.Model;
 using StateSpaceSandbox.ModelImplementation;
+using StateSpaceSandbox.Random;
 
 namespace StateSpaceSandbox
 {
@@ -12,6 +13,15 @@ namespace StateSpaceSandbox
     {
         public static void Main(string[] args)
         {
+            XorShift160 lol = new XorShift160();
+            double runningSum = 0;
+
+            while (!Console.KeyAvailable)
+            {
+                Console.WriteLine(lol.NextDouble());
+            }
+            return;
+
             IStateMatrix A = new StateMatrix(2, 2);
             A[0, 0] = 0;
             A[0, 1] = 1;
