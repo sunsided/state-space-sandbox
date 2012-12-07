@@ -7,12 +7,12 @@ namespace StateSpaceSandbox.ModelImplementation
     /// <summary>
     /// Describes a constant value
     /// </summary>
-    public sealed class ConstantValue : IExpressionProvider
+    public sealed class ConstantValue : IExpressionProvider, IValueProvider
     {
         /// <summary>
         /// Gets the value
         /// </summary>
-        public double Value { get; private set; }
+        public double Value { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConstantValue" /> class.

@@ -16,12 +16,12 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// The data
         /// </summary>
-        private readonly double[,] _data;
+        private readonly IValueProvider[,] _data;
 
         /// <summary>
         /// The method used to add two vectors
         /// </summary>
-        private readonly Action<double[,], IVector, IVector> _transformationExpression;
+        private readonly Action<IMatrix, IVector, IVector> _transformationExpression;
 
         /// <summary>
         /// The width
@@ -45,7 +45,7 @@ namespace StateSpaceSandbox.ModelImplementation
             if (rows <= 0) throw new ArgumentOutOfRangeException("rows", "Matrix height must be greater or equal to 1");
             _columns = columns;
             _rows = rows;
-            _data = new double[rows, columns];
+            _data = new IValueProvider[rows, columns];
             _transformationExpression = BuildTransformationExpression(columns, rows);
         }
 
@@ -71,10 +71,16 @@ namespace StateSpaceSandbox.ModelImplementation
         public double this[int row, int column]
         {
             [DebuggerStepThrough, Pure]
-            get { return _data[row, column]; }
+            get { return _data[row, column] != null ? _data[row, column].Value : 0.0D; }
 
             [DebuggerStepThrough]
-            set { _data[row, column] = value; }
+            set
+            {
+                if (_data[row, column] != null)
+                    _data[row, column].Value = value;
+                else
+                    _data[row, column] = new ConstantValue(value);
+            }
         }
 
         /// <summary>
@@ -87,7 +93,7 @@ namespace StateSpaceSandbox.ModelImplementation
         {
             if (vector.Length != _columns) throw new ArgumentException("The input vector must have the same length as this matrix has columns", "vector");
             if (resultingVector.Length != _rows) throw new ArgumentException("The resulting vector must have the same length as this matrix has rows", "vector");
-            _transformationExpression(_data, vector, resultingVector);
+            _transformationExpression(this, vector, resultingVector);
         }
 
         /// <summary>
@@ -96,9 +102,9 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <param name="columns">The columns.</param>
         /// <param name="rows">The rows.</param>
         /// <returns>The compiled addition lambda.</returns>
-        private static Action<double[,], IVector, IVector> BuildTransformationExpression(int columns, int rows)
+        private static Action<IMatrix, IVector, IVector> BuildTransformationExpression(int columns, int rows)
         {
-            var leftArray = Expression.Parameter(typeof (double[,]), "left");
+            var leftArray = Expression.Parameter(typeof(IMatrix), "left");
             var rightArray = Expression.Parameter(typeof (IVector), "right");
             var resultArray = Expression.Parameter(typeof(IVector), "result");
 
@@ -115,7 +121,7 @@ namespace StateSpaceSandbox.ModelImplementation
                 {
                     var column = Expression.Constant(c, typeof(int));
 
-                    var accessLeft = Expression.ArrayAccess(leftArray, row, column); // TODO: Optimizations for matrices that are know to be fix - i.e. values given at construction time - hard code values and remove zero value multiplications
+                    var accessLeft = Expression.Property(leftArray, "Item", row, column); // TODO: Optimizations for matrices that are know to be fix - i.e. values given at construction time - hard code values and remove zero value multiplications
                     var accessRight = Expression.Property(rightArray, "Item", column); // TODO: ^-- Optimize() call could re-compute expression tree with actual values
                     var multiplication = Expression.Multiply(accessLeft, accessRight);
                     if (runningSum == null)
@@ -140,7 +146,7 @@ namespace StateSpaceSandbox.ModelImplementation
 
             // combine statements to expression block, then create and compile lambda
             var additionBlock = Expression.Block(expressions);
-            var lambda = Expression.Lambda<Action<double[,], IVector, IVector>>(additionBlock, "addition", new[] {leftArray, rightArray, resultArray});
+            var lambda = Expression.Lambda<Action<IMatrix, IVector, IVector>>(additionBlock, "addition", new[] { leftArray, rightArray, resultArray });
             return lambda.Compile();
         }
     }
