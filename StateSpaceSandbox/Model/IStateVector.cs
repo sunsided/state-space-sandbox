@@ -8,20 +8,24 @@
         /// <summary>
         /// Adds a state vector to this instance and returns the summed vector
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
-        IStateVector Add(IStateVector other);
+        /// <returns>IStateVector.</returns>
+        IStateVector Add(ISimulationTime simulationTime, IStateVector other);
 
         /// <summary>
         /// Adds a state vector to this instance and returns the summed vector
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
-        void AddInPlace(IStateVector other);
+        void AddInPlace(ISimulationTime simulationTime, IStateVector other);
 
         /// <summary>
         /// Adds a state vector to this instance and returns the summed vector
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
         /// <param name="output">The output.</param>
-        void Add(IStateVector other, ref IStateVector output);
+        void Add(ISimulationTime simulationTime, IStateVector other, ref IStateVector output);
     }
 }

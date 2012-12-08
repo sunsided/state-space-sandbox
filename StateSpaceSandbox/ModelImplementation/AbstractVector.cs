@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Linq.Expressions;
+using StateSpaceSandbox.Compiler;
 using StateSpaceSandbox.Model;
 
 namespace StateSpaceSandbox.ModelImplementation
@@ -16,17 +14,7 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// The data
         /// </summary>
-        private readonly double[] _data;
-
-        /// <summary>
-        /// The method used to add two vectors
-        /// </summary>
-        private static Action<double[], IVector, IVector> _additionExpression;
-
-        /// <summary>
-        /// The method used to add two vectors in-place
-        /// </summary>
-        private static Action<double[], IVector> _additionInPlaceExpression;
+        private readonly IValueProvider[] _data;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AbstractVector" /> class.
@@ -36,10 +24,7 @@ namespace StateSpaceSandbox.ModelImplementation
         public AbstractVector(int length)
         {
             if (length <= 0) throw new ArgumentOutOfRangeException("length", "Vector length must be greater or equal to 1");
-            _data = new double[length];
-
-            _additionExpression = BuildAdditionExpression(length);
-            _additionInPlaceExpression = BuildInPlaceAdditionExpression(length);
+            _data = new IValueProvider[length];
         }
 
         /// <summary>
@@ -49,62 +34,120 @@ namespace StateSpaceSandbox.ModelImplementation
         public int Length { [DebuggerStepThrough, Pure] get { return _data.Length; } }
 
         /// <summary>
-        /// Adds the specified vector.
+        /// Gets the value.
         /// </summary>
-        /// <param name="other">The vector to add.</param>
-        /// <returns>IVector.</returns>
-        /// <exception cref="System.ArgumentNullException">The other vector must not be null</exception>
-        /// <exception cref="System.ArgumentException">The other vector must be of the same length as this instance</exception>
-        protected void AddInPlace(IVector other)
+        /// <param name="index">The index.</param>
+        /// <param name="simulationTime">The simulation time.</param>
+        /// <returns>IValueProvider.</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public double GetValue(int index, ISimulationTime simulationTime)
         {
-            if (other == null) throw new ArgumentNullException("other", "The other vector must not be null");
-            if (other.Length != Length) throw new ArgumentException("The other vector must be of the same length as this instance", "other");
+            var value = _data[index] ?? (_data[index] = new ConstantValue(0));
+            return value.GetValue(simulationTime);
+        }
 
-            _additionInPlaceExpression(_data, other);
+        /// <summary>
+        /// Gets the value provider.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <returns>IValueProvider.</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public IValueProvider GetValueProvider(int index)
+        {
+            return _data[index];
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <param name="value">The value.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void SetValue(int index, IValueProvider value)
+        {
+            _data[index] = value;
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <param name="value">The value.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void SetValue(int index, double value)
+        {
+            _data[index] = new ConstantValue(value);
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <param name="valueFunction">The value.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void SetValue(int index, Func<ISimulationTime, double> valueFunction)
+        {
+            _data[index] = new RuntimeValue(valueFunction);
         }
 
         /// <summary>
         /// Adds the specified vector.
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
+        /// <param name="other">The vector to add.</param>
+        /// <returns>IVector.</returns>
+        /// <exception cref="System.ArgumentNullException">The other vector must not be null</exception>
+        /// <exception cref="System.ArgumentException">The other vector must be of the same length as this instance</exception>
+        protected void AddInPlace(ISimulationTime simulationTime, IVector other)
+        {
+            if (other == null) throw new ArgumentNullException("other", "The other vector must not be null");
+            if (other.Length != Length) throw new ArgumentException("The other vector must be of the same length as this instance", "other");
+
+            for (int i = 0; i < Length; ++i)
+            {
+                var left = GetValue(i, simulationTime);
+                var right = other.GetValue(i, simulationTime);
+                SetValue(i, new VariableValue(left + right));
+            }
+        }
+
+        /// <summary>
+        /// Adds the specified vector.
+        /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add.</param>
         /// <param name="result">The result.</param>
         /// <returns>IVector.</returns>
         /// <exception cref="System.ArgumentNullException">The other vector must not be null</exception>
         /// <exception cref="System.ArgumentException">The other vector must be of the same length as this instance</exception>
-        protected void Add(IVector other, ref IVector result)
+        protected void Add(ISimulationTime simulationTime, IVector other, ref IVector result)
         {
             if (other == null) throw new ArgumentNullException("other", "The other vector must not be null");
             if (result == null) throw new ArgumentNullException("result", "The result vector must not be null");
             if (other.Length != Length) throw new ArgumentException("The other vector must be of the same length as this instance", "other");
             if (result.Length != Length) throw new ArgumentException("The result vector must be of the same length as this instance", "other");
 
-            _additionExpression(_data, other, result);
+            for (int i = 0; i < Length; ++i)
+            {
+                var left = GetValue(i, simulationTime);
+                var right = other.GetValue(i, simulationTime);
+                result.SetValue(i, new VariableValue(left + right));
+            }
         }
 
-        /// <summary>
-        /// Gets or sets the <see cref="System.Double" /> at the specified index.
-        /// </summary>
-        /// <param name="index">The index.</param>
-        /// <returns>System.Double.</returns>
-        /// <exception cref="IndexOutOfRangeException">The specified index was smaller than zero or greater or equal to <see cref="Length"/></exception>
-        public double this[int index]
-        {
-            [DebuggerStepThrough, Pure] get { return _data[index]; }
-
-            [DebuggerStepThrough] set { _data[index] = value; }
-        }
-
+        /*
         /// <summary>
         /// Builds the addition expression.
         /// </summary>
         /// <typeparam name="TVector">The type of the T vector.</typeparam>
         /// <param name="length">The length.</param>
         /// <returns>The compiled addition lambda.</returns>
-        private static Action<double[], IVector, IVector> BuildAdditionExpression(int length)
+        private static Action<IVector, IVector, ISimulationTime, IVector> BuildAdditionExpression(int length)
         {
-            var leftArray = Expression.Parameter(typeof(double[]), "left");
+            var leftArray = Expression.Parameter(typeof(IVector), "left");
             var rightArray = Expression.Parameter(typeof (IVector), "right");
             var resultArray = Expression.Parameter(typeof (IVector), "result");
+            var simulationTime = Expression.Parameter(typeof (ISimulationTime), "time");
 
             // Prepare the list of expressions for the calculation
             var expressions = new List<Expression>();
@@ -113,6 +156,7 @@ namespace StateSpaceSandbox.ModelImplementation
             for (int i = 0; i < length; ++i)
             {
                 var index = Expression.Constant(i, typeof (int));
+                Expression.Call()
                 var accessLeft = Expression.ArrayAccess(leftArray, index);
                 var accessRight = Expression.Property(rightArray, "Item", index);
                 var accessResult = Expression.Property(resultArray, "Item", index);
@@ -128,7 +172,7 @@ namespace StateSpaceSandbox.ModelImplementation
 
             // combine statements to expression block, then create and compile lambda
             var additionBlock = Expression.Block(expressions);
-            var lambda = Expression.Lambda<Action<double[], IVector, IVector>>(additionBlock, "addition", new[] { leftArray, rightArray, resultArray });
+            var lambda = Expression.Lambda<Action<IVector, IVector, ISimulationTime, IVector>>(additionBlock, "addition", new[] { leftArray, rightArray, resultArray });
             return lambda.Compile();
         }
 
@@ -138,7 +182,7 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <typeparam name="TVector">The type of the T vector.</typeparam>
         /// <param name="length">The length.</param>
         /// <returns>The compiled addition lambda.</returns>
-        private static Action<double[], IVector> BuildInPlaceAdditionExpression(int length)
+        private static Action<IVector, IVector, ISimulationTime> BuildInPlaceAdditionExpression(int length)
         {
             var leftArray = Expression.Parameter(typeof(double[]), "left");
             var rightArray = Expression.Parameter(typeof(IVector), "right");
@@ -160,18 +204,10 @@ namespace StateSpaceSandbox.ModelImplementation
 
             // combine statements to expression block, then create and compile lambda
             var additionBlock = Expression.Block(expressions);
-            var lambda = Expression.Lambda<Action<double[], IVector>>(additionBlock, "additionInPlace", new[] { leftArray, rightArray });
+            var lambda = Expression.Lambda<Action<IVector, IVector, ISimulationTime>>(additionBlock, "additionInPlace", new[] { leftArray, rightArray });
             return lambda.Compile();
         }
-
-        /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
-        /// </summary>
-        /// <returns>A <see cref="System.String" /> that represents this instance.</returns>
-        public override string ToString()
-        {
-            return String.Join("; ", _data);
-        }
+        */
     }
 }
 

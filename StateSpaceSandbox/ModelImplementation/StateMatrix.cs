@@ -22,10 +22,10 @@ namespace StateSpaceSandbox.ModelImplementation
         /// </summary>
         /// <param name="vector">The vector.</param>
         /// <returns>IStateVector.</returns>
-        public IStateVector Transform(IStateVector vector)
+        public IStateVector Transform(ISimulationTime simulationTime, IStateVector vector)
         {
             IVector result = new StateVector(Rows);
-            Transform(vector, ref result);
+            Transform(simulationTime, vector, ref result);
             return (IStateVector)result;
         }
 
@@ -34,10 +34,10 @@ namespace StateSpaceSandbox.ModelImplementation
         /// </summary>
         /// <param name="vector">The vector.</param>
         /// <param name="output">The output.</param>
-        public void Transform(IStateVector vector, ref IStateVector output)
+        public void Transform(ISimulationTime simulationTime, IStateVector vector, ref IStateVector output)
         {
             IVector result = output;
-            Transform(vector, ref result);
+            Transform(simulationTime, vector, ref result);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
+using StateSpaceSandbox.Compiler;
 using StateSpaceSandbox.Model;
 
 namespace StateSpaceSandbox.ModelImplementation
@@ -18,10 +19,12 @@ namespace StateSpaceSandbox.ModelImplementation
         /// </summary>
         private readonly IValueProvider[,] _data;
 
+        /*
         /// <summary>
         /// The method used to add two vectors
         /// </summary>
         private readonly Action<IMatrix, IVector, IVector> _transformationExpression;
+        */
 
         /// <summary>
         /// The width
@@ -46,7 +49,8 @@ namespace StateSpaceSandbox.ModelImplementation
             _columns = columns;
             _rows = rows;
             _data = new IValueProvider[rows, columns];
-            _transformationExpression = BuildTransformationExpression(columns, rows);
+         
+            //_transformationExpression = BuildTransformationExpression(columns, rows);
         }
 
         /// <summary>
@@ -62,25 +66,65 @@ namespace StateSpaceSandbox.ModelImplementation
         public int Rows { [DebuggerStepThrough, Pure] get { return _rows; } }
 
         /// <summary>
-        /// Gets or sets the <see cref="System.Double" /> at the specified index.
+        /// Gets the value.
         /// </summary>
-        /// <param name="column">The column.</param>
         /// <param name="row">The row.</param>
-        /// <returns>System.Double.</returns>
-        /// <exception cref="IndexOutOfRangeException">The specified index was smaller than zero or greater or equal to <see cref="Length" /></exception>
-        public double this[int row, int column]
+        /// <param name="column">The column.</param>
+        /// <param name="simulationTime">The simulation time.</param>
+        /// <returns>IValueProvider.</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public double GetValue(int row, int column, ISimulationTime simulationTime)
         {
-            [DebuggerStepThrough, Pure]
-            get { return _data[row, column] != null ? _data[row, column].Value : 0.0D; }
+            var value = _data[row, column] ?? (_data[row, column] = new ConstantValue(0));
+            return value.GetValue(simulationTime);
+        }
 
-            [DebuggerStepThrough]
-            set
-            {
-                if (_data[row, column] != null)
-                    _data[row, column].Value = value;
-                else
-                    _data[row, column] = new ConstantValue(value);
-            }
+        /// <summary>
+        /// Gets the value.
+        /// </summary>
+        /// <param name="row">The row.</param>
+        /// <param name="column">The column.</param>
+        /// <returns>IValueProvider.</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public IValueProvider GetValueProvider(int row, int column)
+        {
+            return _data[row, column];
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="row">The row.</param>
+        /// <param name="column">The column.</param>
+        /// <param name="value">The value.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void SetValue(int row, int column, IValueProvider value)
+        {
+            _data[row, column] = value;
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="row">The row.</param>
+        /// <param name="column">The column.</param>
+        /// <param name="value">The value.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void SetValue(int row, int column, double value)
+        {
+            _data[row, column] = new ConstantValue(value);
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="row">The row.</param>
+        /// <param name="column">The column.</param>
+        /// <param name="valueFunction">The value.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void SetValue(int row, int column, Func<ISimulationTime, double> valueFunction)
+        {
+            _data[row, column] = new RuntimeValue(valueFunction);
         }
 
         /// <summary>
@@ -89,11 +133,23 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <param name="vector">The vector.</param>
         /// <param name="resultingVector">The resulting vector.</param>
         /// <exception cref="System.ArgumentException">The input vector must have the same length as this matrix has columns;vector</exception>
-        public void Transform(IVector vector, ref IVector resultingVector)
+        public void Transform(ISimulationTime simulationTime, IVector vector, ref IVector resultingVector)
         {
             if (vector.Length != _columns) throw new ArgumentException("The input vector must have the same length as this matrix has columns", "vector");
             if (resultingVector.Length != _rows) throw new ArgumentException("The resulting vector must have the same length as this matrix has rows", "vector");
-            _transformationExpression(this, vector, resultingVector);
+            
+            // _transformationExpression(this, vector, resultingVector);
+            for (int r = 0; r < Rows; ++r)
+            {
+                double sum = 0;
+                for (int c = 0; c < Columns; ++c)
+                {
+                    var m = GetValue(r, c, simulationTime);
+                    var v = vector.GetValue(c, simulationTime);
+                    sum += m*v;
+                }
+                resultingVector.SetValue(r, sum);
+            }
         }
 
         /// <summary>

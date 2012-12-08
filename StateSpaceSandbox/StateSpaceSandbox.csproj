@@ -42,8 +42,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ModelImplementation\ConstantValue.cs" />
+    <Compile Include="Compiler\CompiledMatrix.cs" />
+    <Compile Include="Compiler\ConstantValue.cs" />
+    <Compile Include="Compiler\VariableValue.cs" />
+    <Compile Include="Compiler\RuntimeValue.cs" />
+    <Compile Include="ModelImplementation\SimulationTime.cs" />
     <Compile Include="Model\IExpressionProvider.cs" />
+    <Compile Include="Model\ISimulationTime.cs" />
     <Compile Include="Model\IValueProvider.cs" />
     <Compile Include="Random\XorShift160.cs" />
     <Compile Include="ModelImplementation\AbstractMatrix.cs" />
