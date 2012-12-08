@@ -2,13 +2,23 @@
 using System.Linq.Expressions;
 using StateSpaceSandbox.Model;
 
-namespace StateSpaceSandbox.ModelImplementation
+namespace StateSpaceSandbox.Compiler
 {
     /// <summary>
     /// Describes a constant value
     /// </summary>
-    public sealed class ConstantValue : IExpressionProvider, IValueProvider
+    public sealed class ConstantValue : IValueProvider
     {
+        /// <summary>
+        /// The zero value
+        /// </summary>
+        public static readonly ConstantValue Zero = new ConstantValue(0);
+
+        /// <summary>
+        /// The zero value
+        /// </summary>
+        public static readonly ConstantValue One = new ConstantValue(1);
+
         /// <summary>
         /// Gets the value
         /// </summary>
@@ -37,6 +47,14 @@ namespace StateSpaceSandbox.ModelImplementation
         public bool IsZero
         {
             get { return Math.Abs(Value) <= Double.Epsilon; }
+        }
+
+        /// <summary>
+        /// Gets the value
+        /// </summary>
+        public double GetValue(ISimulationTime time)
+        {
+            return Value;
         }
 
         /// <summary>

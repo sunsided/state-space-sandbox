@@ -8,6 +8,6 @@
         /// <summary>
         /// Gets the value
         /// </summary>
-        double Value { get; set; }
+        double GetValue(ISimulationTime time);
     }
 }

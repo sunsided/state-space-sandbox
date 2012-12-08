@@ -8,20 +8,24 @@
         /// <summary>
         /// Adds a control vector to this instance and returns the summed vector
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
-        IOutputVector Add(IOutputVector other);
+        /// <returns>IOutputVector.</returns>
+        IOutputVector Add(ISimulationTime simulationTime, IOutputVector other);
 
         /// <summary>
         /// Adds a control vector to this instance and returns the summed vector
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
-        void AddInPlace(IOutputVector other);
+        void AddInPlace(ISimulationTime simulationTime, IOutputVector other);
 
         /// <summary>
         /// Adds a control vector to this instance and returns the summed vector
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
         /// <param name="output">The output.</param>
-        void Add(IOutputVector other, ref IOutputVector output);
+        void Add(ISimulationTime simulationTime, IOutputVector other, ref IOutputVector output);
     }
 }

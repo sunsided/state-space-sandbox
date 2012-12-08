@@ -18,10 +18,11 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// Adds another control vector
         /// </summary>
+        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The other vector</param>
-        public void Add(IControlVector other)
+        public void Add(ISimulationTime simulationTime, IControlVector other)
         {
-            AddInPlace(other);
+            AddInPlace(simulationTime, other);
         }
     }
 }

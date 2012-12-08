@@ -5,12 +5,12 @@ namespace StateSpaceSandbox.Model
     /// <summary>
     /// Provider for <see cref="Expression"/> instances
     /// </summary>
-    interface IExpressionProvider
+    public interface IExpressionProvider
     {
         /// <summary>
         /// Gets an expression that provides this item's value
         /// </summary>
         /// <returns>The expression</returns>
-        Expression GetExpression();
+        Expression GetExpression(ParameterExpression element);
     }
 }

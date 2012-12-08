@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using StateSpaceSandbox.Compiler;
 using StateSpaceSandbox.Model;
 using StateSpaceSandbox.ModelImplementation;
 using StateSpaceSandbox.Random;
@@ -25,27 +26,32 @@ namespace StateSpaceSandbox
             */
 
             IStateMatrix A = new StateMatrix(2, 2);
-            A[0, 0] = 0;
-            A[0, 1] = 1;
-            A[1, 0] = 0;
-            A[1, 0] = 0;
+            A.SetValue(0, 0, 0);
+            A.SetValue(0, 1, 1);
+            A.SetValue(1, 0, 0);
+            A.SetValue(1, 0, 0);
+
+            /*
+            var c = new CompiledMatrix<IStateMatrix>(A);
+            c.Compile();
+             */
 
             IInputMatrix B = new InputMatrix(2, 1);
-            B[0, 0] = 0;
-            B[1, 0] = 1;
+            B.SetValue(0, 0, 0);
+            B.SetValue(1, 0, 1);
 
             IOutputMatrix C = new OutputMatrix(2, 2);
-            C[0, 0] = 1;
-            C[0, 1] = 0;
-            C[1, 0] = 0;
-            C[1, 1] = 1;
+            C.SetValue(0, 0, 1);
+            C.SetValue(0, 1, 0);
+            C.SetValue(1, 0, 0);
+            C.SetValue(1, 1, 1);
 
             IFeedthroughMatrix D = new FeedthroughMatrix(2, 1);
-            D[0, 0] = 0;
-            D[1, 0] = 0;
+            D.SetValue(0, 0, 0);
+            D.SetValue(1, 0, 0);
 
             IControlVector u = new ControlVector(1);
-            u[0] = 1;
+            u.SetValue(0, 1);
 
             IStateVector x = new StateVector(2);
             
@@ -62,6 +68,8 @@ namespace StateSpaceSandbox
             Semaphore startCalculation = new Semaphore(0, 2);
             Semaphore calculationDone = new Semaphore(0, 2);
 
+            SimulationTime simulationTime = new SimulationTime(); 
+
             IStateVector dx = new StateVector(x.Length);
             Task inputToState = new Task(() =>
                                              {
@@ -71,9 +79,9 @@ namespace StateSpaceSandbox
                                                      startCalculation.WaitOne();
                                                      Thread.MemoryBarrier();
 
-                                                     A.Transform(x, ref dx);
-                                                     B.Transform(u, ref dxu); // TODO: TransformAndAdd()      
-                                                     dx.AddInPlace(dxu);
+                                                     A.Transform(simulationTime, x, ref dx);
+                                                     B.Transform(simulationTime, u, ref dxu); // TODO: TransformAndAdd()      
+                                                     dx.AddInPlace(simulationTime, dxu);
 
                                                      Thread.MemoryBarrier();
                                                      calculationDone.Release();
@@ -89,9 +97,9 @@ namespace StateSpaceSandbox
                                                       startCalculation.WaitOne();
                                                       Thread.MemoryBarrier();
 
-                                                      C.Transform(x, ref y);
-                                                      D.Transform(u, ref yu); // TODO: TransformAndAdd()
-                                                      y.AddInPlace(yu);
+                                                      C.Transform(simulationTime, x, ref y);
+                                                      D.Transform(simulationTime, u, ref yu); // TODO: TransformAndAdd()
+                                                      y.AddInPlace(simulationTime, yu);
 
                                                       Thread.MemoryBarrier();
                                                       calculationDone.Release();
@@ -116,20 +124,20 @@ namespace StateSpaceSandbox
 
                                                 // wait for state vector to be changeable
                                                 // TODO: perform real transformation
-                                                x.AddInPlace(dx); // discrete integration, T=1
+                                                x.AddInPlace(simulationTime, dx); // discrete integration, T=1
                                                 
                                                 // video killed the radio star
                                                 if (steps % 1000 == 0)
                                                 {
                                                     var localY = y;
                                                     double thingy = steps/watch.Elapsed.TotalSeconds;
-                                                    Trace.WriteLine("Position: " + localY[0] + ", Velocity: " + localY[1] + ", Acceleration: " + u[0] + ", throughput: " + thingy);
+                                                    Trace.WriteLine("Position: " + localY.GetValue(0, simulationTime) + ", Velocity: " + localY.GetValue(1, simulationTime) + ", Acceleration: " + u.GetValue(0, simulationTime) + ", throughput: " + thingy);
                                                 }
 
                                                 // cancel out acceleration
                                                 if (steps++ == 10)
                                                 {
-                                                    u[0] = 0;
+                                                    u.SetValue(0, 0);
                                                 }
                                             }
                                         });
