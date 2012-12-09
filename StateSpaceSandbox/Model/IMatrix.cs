@@ -22,9 +22,8 @@ namespace StateSpaceSandbox.Model
         /// </summary>
         /// <param name="row">The row.</param>
         /// <param name="column">The column.</param>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <returns>IValueProvider.</returns>
-        double GetValue(int row, int column, ISimulationTime simulationTime);
+        double GetValue(int row, int column);
 
         /// <summary>
         /// Gets the value provider.

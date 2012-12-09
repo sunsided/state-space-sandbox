@@ -47,8 +47,10 @@
     <Compile Include="Compiler\VariableValue.cs" />
     <Compile Include="Compiler\RuntimeValue.cs" />
     <Compile Include="ModelImplementation\SimulationTime.cs" />
-    <Compile Include="Model\IExpressionProvider.cs" />
+    <Compile Include="Compiler\IExpressionProvider.cs" />
+    <Compile Include="Model\ISimulation.cs" />
     <Compile Include="Model\ISimulationTime.cs" />
+    <Compile Include="Model\ISimulationUpdate.cs" />
     <Compile Include="Model\IValueProvider.cs" />
     <Compile Include="Random\XorShift160.cs" />
     <Compile Include="ModelImplementation\AbstractMatrix.cs" />

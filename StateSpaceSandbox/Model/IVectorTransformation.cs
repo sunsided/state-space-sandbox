@@ -12,7 +12,7 @@
         /// </summary>
         /// <param name="vector">The vector to transform</param>
         /// <returns>The transformed vector</returns>
-        TOutput Transform(ISimulationTime simulationTime, TInput vector);
+        TOutput Transform(TInput vector);
 
         /// <summary>
         /// Transforms the given vector
@@ -20,6 +20,6 @@
         /// <param name="vector">The vector to transform</param>
         /// <param name="output">The output.</param>
         /// <returns>The transformed vector</returns>
-        void Transform(ISimulationTime simulationTime, TInput vector, ref TOutput output);
+        void Transform(TInput vector, ref TOutput output);
     }
 }

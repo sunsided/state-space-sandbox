@@ -3,7 +3,7 @@
     /// <summary>
     /// Describes a control (input) vector ("u")
     /// </summary>
-    public interface IControlVector : IVector
+    public interface IControlVector : IReadableVector
     {
     }
 }
