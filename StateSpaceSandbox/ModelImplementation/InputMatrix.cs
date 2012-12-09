@@ -20,26 +20,24 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// Transforms the specified vector.
         /// </summary>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="vector">The vector.</param>
         /// <returns>IStateVector.</returns>
-        public IStateVector Transform(ISimulationTime simulationTime, IControlVector vector)
+        public IStateVector Transform(IControlVector vector)
         {
-            IVector result = new StateVector(Rows);
-            Transform(simulationTime, vector, ref result);
+            IWritableVector result = new StateVector(Rows);
+            Transform(vector, ref result);
             return (IStateVector)result;
         }
 
         /// <summary>
         /// Transforms the specified vector.
         /// </summary>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="vector">The vector.</param>
         /// <param name="output">The output.</param>
-        public void Transform(ISimulationTime simulationTime, IControlVector vector, ref IStateVector output)
+        public void Transform(IControlVector vector, ref IStateVector output)
         {
-            IVector result = output;
-            Transform(simulationTime, vector, ref result);
+            IWritableVector result = output;
+            Transform(vector, ref result);
         }
     }
 }

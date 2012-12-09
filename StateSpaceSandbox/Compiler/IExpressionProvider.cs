@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace StateSpaceSandbox.Model
+namespace StateSpaceSandbox.Compiler
 {
     /// <summary>
     /// Provider for <see cref="Expression"/> instances

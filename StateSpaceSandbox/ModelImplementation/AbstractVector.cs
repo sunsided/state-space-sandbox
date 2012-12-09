@@ -21,7 +21,7 @@ namespace StateSpaceSandbox.ModelImplementation
         /// </summary>
         /// <param name="length">The length.</param>
         /// <exception cref="System.ArgumentOutOfRangeException">length;Vector length must be greater or equal to 1</exception>
-        public AbstractVector(int length)
+        protected AbstractVector(int length)
         {
             if (length <= 0) throw new ArgumentOutOfRangeException("length", "Vector length must be greater or equal to 1");
             _data = new IValueProvider[length];
@@ -37,13 +37,12 @@ namespace StateSpaceSandbox.ModelImplementation
         /// Gets the value.
         /// </summary>
         /// <param name="index">The index.</param>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <returns>IValueProvider.</returns>
         /// <exception cref="System.NotImplementedException"></exception>
-        public double GetValue(int index, ISimulationTime simulationTime)
+        public double GetValue(int index)
         {
             var value = _data[index] ?? (_data[index] = new ConstantValue(0));
-            return value.GetValue(simulationTime);
+            return value.Value;
         }
 
         /// <summary>
@@ -93,20 +92,19 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// Adds the specified vector.
         /// </summary>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add.</param>
         /// <returns>IVector.</returns>
         /// <exception cref="System.ArgumentNullException">The other vector must not be null</exception>
         /// <exception cref="System.ArgumentException">The other vector must be of the same length as this instance</exception>
-        protected void AddInPlace(ISimulationTime simulationTime, IVector other)
+        protected void AddInPlace(IReadableVector other)
         {
             if (other == null) throw new ArgumentNullException("other", "The other vector must not be null");
             if (other.Length != Length) throw new ArgumentException("The other vector must be of the same length as this instance", "other");
 
             for (int i = 0; i < Length; ++i)
             {
-                var left = GetValue(i, simulationTime);
-                var right = other.GetValue(i, simulationTime);
+                var left = GetValue(i);
+                var right = other.GetValue(i);
                 SetValue(i, new VariableValue(left + right));
             }
         }
@@ -114,13 +112,13 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// Adds the specified vector.
         /// </summary>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add.</param>
         /// <param name="result">The result.</param>
         /// <returns>IVector.</returns>
         /// <exception cref="System.ArgumentNullException">The other vector must not be null</exception>
         /// <exception cref="System.ArgumentException">The other vector must be of the same length as this instance</exception>
-        protected void Add(ISimulationTime simulationTime, IVector other, ref IVector result)
+        protected void Add<TResult>(IReadableVector other, ref TResult result)
+            where TResult: IWritableVector
         {
             if (other == null) throw new ArgumentNullException("other", "The other vector must not be null");
             if (result == null) throw new ArgumentNullException("result", "The result vector must not be null");
@@ -129,9 +127,24 @@ namespace StateSpaceSandbox.ModelImplementation
 
             for (int i = 0; i < Length; ++i)
             {
-                var left = GetValue(i, simulationTime);
-                var right = other.GetValue(i, simulationTime);
+                var left = GetValue(i);
+                var right = other.GetValue(i);
                 result.SetValue(i, new VariableValue(left + right));
+            }
+        }
+
+        /// <summary>
+        /// Updates the element
+        /// </summary>
+        /// <param name="time">The current time</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void Update(ISimulationTime time)
+        {
+            for (int i = 0; i < Length; ++i)
+            {
+                var updatableField = _data[i] as ISimulationUpdate;
+                if (updatableField == null) continue;
+                updatableField.Update(time);
             }
         }
 

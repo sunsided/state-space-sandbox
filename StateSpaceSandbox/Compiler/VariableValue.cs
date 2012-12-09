@@ -9,16 +9,6 @@ namespace StateSpaceSandbox.Compiler
     public sealed class VariableValue : IValueProvider
     {
         /// <summary>
-        /// The zero value
-        /// </summary>
-        public static readonly VariableValue Zero = new VariableValue(0);
-
-        /// <summary>
-        /// The zero value
-        /// </summary>
-        public static readonly VariableValue One = new VariableValue(1);
-
-        /// <summary>
         /// Gets the value
         /// </summary>
         public double Value { get; set; }
@@ -46,23 +36,6 @@ namespace StateSpaceSandbox.Compiler
         public bool IsZero
         {
             get { return Math.Abs(Value) <= Double.Epsilon; }
-        }
-
-        /// <summary>
-        /// Gets the value
-        /// </summary>
-        public double GetValue(ISimulationTime time)
-        {
-            return Value;
-        }
-
-        /// <summary>
-        /// Sets the value.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        public void SetValue(double value)
-        {
-            Value = value;
         }
     }
 }

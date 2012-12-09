@@ -12,7 +12,7 @@ namespace StateSpaceSandbox.ModelImplementation
     /// Basic matrix
     /// </summary>
     [DebuggerDisplay("{Rows} x {Columns}")]
-    internal abstract class AbstractMatrix : IMatrix
+    internal abstract class AbstractMatrix : IMatrix, ISimulationUpdate
     {
         /// <summary>
         /// The data
@@ -70,13 +70,12 @@ namespace StateSpaceSandbox.ModelImplementation
         /// </summary>
         /// <param name="row">The row.</param>
         /// <param name="column">The column.</param>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <returns>IValueProvider.</returns>
         /// <exception cref="System.NotImplementedException"></exception>
-        public double GetValue(int row, int column, ISimulationTime simulationTime)
+        public double GetValue(int row, int column)
         {
             var value = _data[row, column] ?? (_data[row, column] = new ConstantValue(0));
-            return value.GetValue(simulationTime);
+            return value.Value;
         }
 
         /// <summary>
@@ -128,12 +127,30 @@ namespace StateSpaceSandbox.ModelImplementation
         }
 
         /// <summary>
+        /// Updates the element
+        /// </summary>
+        /// <param name="time">The current time</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void Update(ISimulationTime time)
+        {
+            for (int r = 0; r < Rows; ++r)
+            {
+                for (int c = 0; c < Columns; ++c)
+                {
+                    var updatable = _data[r, c] as ISimulationUpdate;
+                    if (updatable == null) continue;
+                    updatable.Update(time);
+                }
+            }
+        }
+
+        /// <summary>
         /// Transforms the specified vector.
         /// </summary>
         /// <param name="vector">The vector.</param>
         /// <param name="resultingVector">The resulting vector.</param>
         /// <exception cref="System.ArgumentException">The input vector must have the same length as this matrix has columns;vector</exception>
-        public void Transform(ISimulationTime simulationTime, IVector vector, ref IVector resultingVector)
+        public void Transform(IReadableVector vector, ref IWritableVector resultingVector)
         {
             if (vector.Length != _columns) throw new ArgumentException("The input vector must have the same length as this matrix has columns", "vector");
             if (resultingVector.Length != _rows) throw new ArgumentException("The resulting vector must have the same length as this matrix has rows", "vector");
@@ -144,8 +161,8 @@ namespace StateSpaceSandbox.ModelImplementation
                 double sum = 0;
                 for (int c = 0; c < Columns; ++c)
                 {
-                    var m = GetValue(r, c, simulationTime);
-                    var v = vector.GetValue(c, simulationTime);
+                    var m = GetValue(r, c);
+                    var v = vector.GetValue(c);
                     sum += m*v;
                 }
                 resultingVector.SetValue(r, sum);

@@ -50,7 +50,7 @@ namespace StateSpaceSandbox
             D.SetValue(0, 0, 0);
             D.SetValue(1, 0, 0);
 
-            IControlVector u = new ControlVector(1);
+            ControlVector u = new ControlVector(1);
             u.SetValue(0, 1);
 
             IStateVector x = new StateVector(2);
@@ -79,9 +79,9 @@ namespace StateSpaceSandbox
                                                      startCalculation.WaitOne();
                                                      Thread.MemoryBarrier();
 
-                                                     A.Transform(simulationTime, x, ref dx);
-                                                     B.Transform(simulationTime, u, ref dxu); // TODO: TransformAndAdd()      
-                                                     dx.AddInPlace(simulationTime, dxu);
+                                                     A.Transform(x, ref dx);
+                                                     B.Transform(u, ref dxu); // TODO: TransformAndAdd()      
+                                                     dx.AddInPlace(dxu);
 
                                                      Thread.MemoryBarrier();
                                                      calculationDone.Release();
@@ -97,9 +97,9 @@ namespace StateSpaceSandbox
                                                       startCalculation.WaitOne();
                                                       Thread.MemoryBarrier();
 
-                                                      C.Transform(simulationTime, x, ref y);
-                                                      D.Transform(simulationTime, u, ref yu); // TODO: TransformAndAdd()
-                                                      y.AddInPlace(simulationTime, yu);
+                                                      C.Transform(x, ref y);
+                                                      D.Transform(u, ref yu); // TODO: TransformAndAdd()
+                                                      y.AddInPlace(yu);
 
                                                       Thread.MemoryBarrier();
                                                       calculationDone.Release();
@@ -124,14 +124,14 @@ namespace StateSpaceSandbox
 
                                                 // wait for state vector to be changeable
                                                 // TODO: perform real transformation
-                                                x.AddInPlace(simulationTime, dx); // discrete integration, T=1
+                                                x.AddInPlace(dx); // discrete integration, T=1
                                                 
                                                 // video killed the radio star
                                                 if (steps % 1000 == 0)
                                                 {
                                                     var localY = y;
                                                     double thingy = steps/watch.Elapsed.TotalSeconds;
-                                                    Trace.WriteLine(simulationTime.Time + " Position: " + localY.GetValue(0, simulationTime) + ", Velocity: " + localY.GetValue(1, simulationTime) + ", Acceleration: " + u.GetValue(0, simulationTime) + ", throughput: " + thingy);
+                                                    Trace.WriteLine(simulationTime.Time + " Position: " + localY.GetValue(0) + ", Velocity: " + localY.GetValue(1) + ", Acceleration: " + u.GetValue(0) + ", throughput: " + thingy);
                                                 }
 
                                                 // cancel out acceleration

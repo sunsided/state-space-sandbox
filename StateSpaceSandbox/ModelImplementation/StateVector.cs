@@ -19,36 +19,33 @@ namespace StateSpaceSandbox.ModelImplementation
         /// <summary>
         /// Adds another control vector
         /// </summary>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The other vector</param>
         /// <returns>IStateVector.</returns>
-        public IStateVector Add(ISimulationTime simulationTime, IStateVector other)
+        public IStateVector Add(IStateVector other)
         {
-            IVector result = new StateVector(Length);
-            Add(simulationTime, other, ref result);
+            IWritableVector result = new StateVector(Length);
+            Add(other, ref result);
             return (IStateVector)result;
         }
 
         /// <summary>
         /// Adds a state vector to this instance and returns the summed vector
         /// </summary>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
-        public void AddInPlace(ISimulationTime simulationTime, IStateVector other)
+        public void AddInPlace(IStateVector other)
         {
-            base.AddInPlace(simulationTime, other);
+            base.AddInPlace(other);
         }
 
         /// <summary>
         /// Adds a state vector to this instance and returns the summed vector
         /// </summary>
-        /// <param name="simulationTime">The simulation time.</param>
         /// <param name="other">The vector to add</param>
         /// <param name="output">The output.</param>
-        public void Add(ISimulationTime simulationTime, IStateVector other, ref IStateVector output)
+        public void Add(IStateVector other, ref IStateVector output)
         {
-            IVector result = output;
-            Add(simulationTime, other, ref result);
+            IWritableVector result = output;
+            Add(other, ref result);
         }
     }
 }
