@@ -112,7 +112,7 @@ namespace StateSpaceSandbox
                                             int steps = 0;
 
                                             while (!ct.IsCancellationRequested)
-                                            {                                              
+                                            {
                                                 // wait for a new u to be applied
                                                 // TODO: apply control vector
                                                 startCalculation.Release(2);
@@ -131,7 +131,7 @@ namespace StateSpaceSandbox
                                                 {
                                                     var localY = y;
                                                     double thingy = steps/watch.Elapsed.TotalSeconds;
-                                                    Trace.WriteLine("Position: " + localY.GetValue(0, simulationTime) + ", Velocity: " + localY.GetValue(1, simulationTime) + ", Acceleration: " + u.GetValue(0, simulationTime) + ", throughput: " + thingy);
+                                                    Trace.WriteLine(simulationTime.Time + " Position: " + localY.GetValue(0, simulationTime) + ", Velocity: " + localY.GetValue(1, simulationTime) + ", Acceleration: " + u.GetValue(0, simulationTime) + ", throughput: " + thingy);
                                                 }
 
                                                 // cancel out acceleration
@@ -139,6 +139,9 @@ namespace StateSpaceSandbox
                                                 {
                                                     u.SetValue(0, 0);
                                                 }
+
+                                                // advance simulation time
+                                                simulationTime.Add(TimeSpan.FromSeconds(1));
                                             }
                                         });
             
