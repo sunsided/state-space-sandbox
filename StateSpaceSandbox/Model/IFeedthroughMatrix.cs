@@ -3,7 +3,7 @@
     /// <summary>
     /// Describes a feedthrough/feedforward matrix ("D")
     /// </summary>
-    public interface IFeedthroughMatrix : ITransformationMatrix<IControlVector, IOutputVector>
+    public interface IFeedthroughMatrix : ITransformationMatrix<IControlVector, IOutputVector>, ISimulationUpdate
     {
     }
 }

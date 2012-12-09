@@ -3,7 +3,7 @@
     /// <summary>
     /// Describes a state matrix ("A")
     /// </summary>
-    public interface IStateMatrix : ITransformationMatrix<IStateVector, IStateVector>
+    public interface IStateMatrix : ITransformationMatrix<IStateVector, IStateVector>, ISimulationUpdate
     {
     }
 }
