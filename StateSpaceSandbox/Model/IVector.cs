@@ -5,7 +5,7 @@ namespace StateSpaceSandbox.Model
     /// <summary>
     /// Describes a vector
     /// </summary>
-    public interface IVector : ISimulationUpdate
+    public interface IVector
     {
         /// <summary>
         /// The vector's length

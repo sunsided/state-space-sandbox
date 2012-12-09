@@ -52,6 +52,7 @@ namespace StateSpaceSandbox
 
             ControlVector u = new ControlVector(1);
             u.SetValue(0, 1);
+            // TODO: Construct vectors and matrices by factory and let the simulation driver compile them after every external change
 
             IStateVector x = new StateVector(2);
             
