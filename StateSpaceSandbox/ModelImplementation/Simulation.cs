@@ -53,6 +53,12 @@ namespace StateSpaceSandbox.ModelImplementation
         public IStateVector StateVector { get; private set; }
 
         /// <summary>
+        /// Gets the current state vector x's differential
+        /// </summary>
+        /// <value>The state vector.</value>
+        public IStateVector StateVectorDifferential { get; private set; }
+
+        /// <summary>
         /// Gets the current control vector u
         /// </summary>
         /// <value>The control vector.</value>
@@ -95,6 +101,13 @@ namespace StateSpaceSandbox.ModelImplementation
             StateMatrix.Update(_simulationTime);
             OutputMatrix.Update(_simulationTime);
             FeedthroughMatrix.Update(_simulationTime);
+
+            // Calculate
+            IStateVector ax = new StateVector(StateVector.Length);
+            StateMatrix.Transform(StateVector, ref ax);
+
+            IStateVector bu = new StateVector(StateVector.Length);
+            StateMatrix.Transform(StateVector, ref ax);
         }
     }
 }
