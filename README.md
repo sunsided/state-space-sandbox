@@ -1,4 +1,4 @@
-# Intercom
+# State-Space Sandbox
 
 State-Space Sandbox is an design tool and simulation engine for state-space models written in C#.
 
