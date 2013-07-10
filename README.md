@@ -4,7 +4,7 @@ State-Space Sandbox is an design tool and simulation engine for state-space mode
 
 ## License
 
-Copyright &copy; 2013 Markus Mayer &lt;widemeadows@gmail.com&gt;
+Copyright &copy; 2013 Markus Mayer
 
 State-Space Sandbox is licensed under the EUPL, Version 1.1 or - as soon they will be approved by the European Commission -
 subsequent versions of the EUPL (the "Licence"); you may not use this work except in compliance with the Licence.
